@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 from lunzi import Tensor
 from lunzi import nn
-from baselines.common.tf_util import normc_initializer
+from slbo.utils.initializer import normc_initializer
 from slbo.utils.truncated_normal import LimitedEntNormal
 from . import BasePolicy
 from slbo.utils.normalizer import GaussianNormalizer

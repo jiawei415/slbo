@@ -1,4 +1,4 @@
-tensorflow
+tensorflow==1.9.0
 numpy
 pyyaml
 termcolor
