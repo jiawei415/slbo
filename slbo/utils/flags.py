@@ -6,6 +6,12 @@ from subprocess import check_output, CalledProcessError
 from lunzi.config import BaseFLAGS, expand, parse
 from lunzi.Logger import logger, FileSink
 
+def get_raw_cmdline():
+    with open("/proc/self/cmdline") as f:
+        x = f.readlines()
+    if x is None or len(x) == 0:
+        return None
+    return x[0].replace("\x00", " ")
 
 class FLAGS(BaseFLAGS):
     _initialized = False
@@ -15,6 +21,7 @@ class FLAGS(BaseFLAGS):
     log_dir: str = None
     run_id: str = None
     algorithm = "OLBO"  # possible options: OLBO, baseline, MF
+    raw_cmdline = get_raw_cmdline()
 
     class slbo(BaseFLAGS):
         n_iters = 20
@@ -114,7 +121,7 @@ class FLAGS(BaseFLAGS):
             cls.seed = (
                 int.from_bytes(os.urandom(3), "little") + 1
             )  # never use seed 0 for RNG, 0 is for `urandom`
-        logger.warning("Setting random seed to %s", cls.seed)
+        # logger.warning("Setting random seed to %s", cls.seed)
 
         import numpy as np
         import tensorflow as tf

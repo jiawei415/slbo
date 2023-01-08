@@ -143,7 +143,9 @@ class PPO(nn.Module):
 
     def train(self, samples, advantages, values, update, normalizer=None):
         returns = advantages + values
-        advantages = (advantages - advantages.mean()) / np.maximum(advantages.std(), 1e-8)
+        advantages = (advantages - advantages.mean()) / np.maximum(
+            advantages.std(), 1e-8
+        )
         assert np.isfinite(advantages).all()
 
         self.sync_old()
@@ -181,4 +183,11 @@ class PPO(nn.Module):
 
         assert np.isclose(lr, now_lr)
 
-        return np.mean(losses), np.mean(pg_losses), np.mean(vf_losses), np.mean(grads_norm), now_lr
+        results = {
+            "loss": np.mean(losses),
+            "pg_loss": np.mean(pg_loss),
+            "vf_loss": np.mean(vf_losses),
+            "grad_norm": np.mean(grads_norm),
+            "lr": float(now_lr),
+        }
+        return results
