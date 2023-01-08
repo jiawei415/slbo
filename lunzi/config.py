@@ -2,6 +2,7 @@
 import argparse
 import os
 import yaml
+import time
 from lunzi.Logger import logger
 
 
@@ -17,7 +18,7 @@ class MetaFLAGS(type):
     _initialized = False
 
     def __setattr__(self, key, value):
-        assert not _frozen, 'Modifying FLAGS after dumping is not allowed!'
+        assert not _frozen, "Modifying FLAGS after dumping is not allowed!"
         super().__setattr__(key, value)
 
     def __getitem__(self, item):
@@ -25,7 +26,7 @@ class MetaFLAGS(type):
 
     def __iter__(self):
         for key, value in self.__dict__.items():
-            if not key.startswith('_') and not isinstance(value, classmethod):
+            if not key.startswith("_") and not isinstance(value, classmethod):
                 if isinstance(value, MetaFLAGS):
                     value = dict(value)
                 yield key, value
@@ -57,7 +58,7 @@ class MetaFLAGS(type):
 
     def freeze(self):
         for key, value in self.__dict__.items():
-            if not key.startswith('_'):
+            if not key.startswith("_"):
                 if isinstance(value, MetaFLAGS):
                     value.freeze()
         self.finalize()
@@ -75,23 +76,23 @@ def parse(cls):
 
     if _initialized:
         return
-    parser = argparse.ArgumentParser(description='Stochastic Lower Bound Optimization')
-    parser.add_argument('-c', '--config', type=str, help='configuration file (YAML)', nargs='+', action='append')
-    parser.add_argument('-s', '--set', type=str, help='additional options', nargs='*', action='append')
+    parser = argparse.ArgumentParser(description="Stochastic Lower Bound Optimization")
+    parser.add_argument("-a", "--alg", type=str, default="ppo")
+    parser.add_argument("-e", "--env", type=str, default="half_cheetah")
+    parser.add_argument("-s", "--seed", type=int, default=2023)
+    parser.add_argument("-l", "--logdir", type=str, default="./results/slbo")
 
     args, unknown = parser.parse_known_args()
     for a in unknown:
-        logger.info('unknown arguments: %s', a)
-    # logger.info('parsed arguments = %s, unknown arguments: %s', args, unknown)
-    if args.config:
-        for config in sum(args.config, []):
-            cls.merge(yaml.load(open(expand(config))))
-    else:
-        logger.info('no config file specified.')
-    if args.set:
-        for instruction in sum(args.set, []):
-            path, *value = instruction.split('=')
-            cls.set_value(path.split('.'), yaml.load('='.join(value)))
+        logger.info("unknown arguments: %s", a)
+    for config in [f"configs/algos/{args.alg}.yml", f"configs/envs/{args.env}.yml"]:
+        cls.merge(yaml.load(open(expand(config)), Loader=yaml.FullLoader))
+
+    time_tag = time.strftime("%Y%m%d%H%M%S", time.localtime())
+    run_id = f"{args.alg}_{args.env}_{args.seed}_{time_tag}"
+    log_dir = os.path.join(args.logdir, args.env, run_id)
+    cls.set_value(["run_id"], run_id)
+    cls.set_value(["log_dir"], log_dir)
+    cls.set_value(["seed"], args.seed)
 
     _initialized = True
-

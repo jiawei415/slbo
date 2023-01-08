@@ -14,7 +14,7 @@ class FLAGS(BaseFLAGS):
     seed = 100
     log_dir: str = None
     run_id: str = None
-    algorithm = 'OLBO'  # possible options: OLBO, baseline, MF
+    algorithm = "OLBO"  # possible options: OLBO, baseline, MF
 
     class slbo(BaseFLAGS):
         n_iters = 20
@@ -23,7 +23,7 @@ class FLAGS(BaseFLAGS):
         n_stages = 100
         n_evaluate_iters = 10
         opt_model = False
-        start = 'reset'  # possibly 'buffer'
+        start = "reset"  # possibly 'buffer'
 
     class plan(BaseFLAGS):
         max_steps = 500
@@ -37,10 +37,10 @@ class FLAGS(BaseFLAGS):
             assert cls.n_envs * cls.max_steps == cls.n_trpo_samples
 
     class env(BaseFLAGS):
-        id = 'HalfCheetah-v2'
+        id = "HalfCheetah-v2"
 
     class rollout(BaseFLAGS):
-        normalizer = 'policy'
+        normalizer = "policy"
         max_buf_size = 200000
         n_train_samples = 10000
         n_dev_samples = 0
@@ -56,7 +56,7 @@ class FLAGS(BaseFLAGS):
         policy_load = None
         buf_load = None
         buf_load_index = 0
-        base = '/tmp/mbrl/logs'
+        base = "/tmp/mbrl/logs"
         warm_up = None
 
         @classmethod
@@ -71,26 +71,29 @@ class FLAGS(BaseFLAGS):
 
     class model(BaseFLAGS):
         hidden_sizes = [500, 500]
-        loss = 'L2'  # possibly L1, L2, MSE, G
+        loss = "L2"  # possibly L1, L2, MSE, G
         G_coef = 0.5
         multi_step = 1
         lr = 1e-3
         weight_decay = 1e-5
         validation_freq = 1
-        optimizer = 'Adam'
+        optimizer = "Adam"
         train_batch_size = 256
         dev_batch_size = 1024
 
     class policy(BaseFLAGS):
         hidden_sizes = [32, 32]
-        init_std = 1.
+        init_std = 1.0
 
     class PPO(BaseFLAGS):
-        n_minibatches = 32
         n_opt_epochs = 10
-        ent_coef = 0.005
-        lr = 3e-4
+        batch_size = 64
+        vf_coef = 0.5
+        ent_coef = 0.0
+        lr = 1e-4
+        lr_decay = True
         clip_range = 0.2
+        max_grad_norm = 0.5
 
     class TRPO(BaseFLAGS):
         cg_damping = 0.1
@@ -108,19 +111,23 @@ class FLAGS(BaseFLAGS):
     @classmethod
     def set_seed(cls):
         if cls.seed == 0:  # auto seed
-            cls.seed = int.from_bytes(os.urandom(3), 'little') + 1  # never use seed 0 for RNG, 0 is for `urandom`
+            cls.seed = (
+                int.from_bytes(os.urandom(3), "little") + 1
+            )  # never use seed 0 for RNG, 0 is for `urandom`
         logger.warning("Setting random seed to %s", cls.seed)
 
         import numpy as np
         import tensorflow as tf
-        import torch
+
+        # import torch
         import random
+
         np.random.seed(cls.seed)
         tf.set_random_seed(np.random.randint(2**30))
-        torch.manual_seed(np.random.randint(2**30))
+        # torch.manual_seed(np.random.randint(2**30))
         random.seed(np.random.randint(2**30))
-        torch.cuda.manual_seed_all(np.random.randint(2**30))
-        torch.backends.cudnn.deterministic = True
+        # torch.cuda.manual_seed_all(np.random.randint(2**30))
+        # torch.backends.cudnn.deterministic = True
 
     @classmethod
     def finalize(cls):
@@ -128,7 +135,7 @@ class FLAGS(BaseFLAGS):
         if log_dir is None:
             run_id = cls.run_id
             if run_id is None:
-                run_id = time.strftime('%Y-%m-%d_%H-%M-%S')
+                run_id = time.strftime("%Y-%m-%d_%H-%M-%S")
 
             log_dir = os.path.join(cls.ckpt.base, run_id)
             cls.log_dir = log_dir
@@ -136,27 +143,30 @@ class FLAGS(BaseFLAGS):
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
-        for t in range(60):
-            try:
-                cls.commit = check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
-                check_output(['git', 'add', '.'])
-                check_output(['git', 'checkout-index', '-a', '-f', f'--prefix={log_dir}/src/'])
-                break
-            except CalledProcessError:
-                pass
-            time.sleep(1)
-        else:
-            raise RuntimeError('Failed after 60 trials.')
+        # for t in range(60):
+        #     try:
+        #         cls.commit = check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
+        #         check_output(['git', 'add', '.'])
+        #         check_output(['git', 'checkout-index', '-a', '-f', f'--prefix={log_dir}/src/'])
+        #         break
+        #     except CalledProcessError:
+        #         pass
+        #     time.sleep(1)
+        # else:
+        #     raise RuntimeError('Failed after 60 trials.')
 
-        yaml.dump(cls.as_dict(), open(os.path.join(log_dir, 'config.yml'), 'w'), default_flow_style=False)
-        open(os.path.join(log_dir, 'diff.patch'), 'w').write(
-            check_output(['git', '--no-pager', 'diff', 'HEAD']).decode('utf-8'))
+        yaml.dump(
+            cls.as_dict(),
+            open(os.path.join(log_dir, "config.yml"), "w"),
+            default_flow_style=False,
+        )
+        # open(os.path.join(log_dir, 'diff.patch'), 'w').write(
+        #     check_output(['git', '--no-pager', 'diff', 'HEAD']).decode('utf-8'))
 
-        logger.add_sink(FileSink(os.path.join(log_dir, 'log.json')))
+        logger.add_sink(FileSink(os.path.join(log_dir, "log.json")))
         logger.info("log_dir = %s", log_dir)
 
         cls.set_frozen()
 
 
 parse(FLAGS)
-
