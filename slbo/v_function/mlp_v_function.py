@@ -9,16 +9,22 @@ from . import BaseVFunction
 class MLPVFunction(BaseVFunction, nn.Module):
     def __init__(self, dim_state, hidden_sizes, normalizer=None):
         super().__init__()
-        self.mlp = MultiLayerPerceptron((dim_state, *hidden_sizes, 1), activation=nn.Tanh, squeeze=True,
-                                        weight_initializer=normc_initializer(1.), build=False)
         self.normalizer = normalizer
+        self.mlp = MultiLayerPerceptron(
+            (dim_state, *hidden_sizes, 1),
+            activation=nn.Tanh,
+            squeeze=True,
+            weight_initializer=normc_initializer(1.0),
+            build=False,
+        )
         self.op_states = tf.placeholder(tf.float32, shape=[None, dim_state])
         self.op_values = self.forward(self.op_states)
 
     def forward(self, states):
-        states = self.normalizer(states)
+        if self.normalizer is not None:
+            states = self.normalizer(states)
         return self.mlp(states)
 
-    @nn.make_method(fetch='values')
-    def get_values(self, states): pass
-
+    @nn.make_method(fetch="values")
+    def get_values(self, states):
+        pass
