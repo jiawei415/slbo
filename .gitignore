@@ -131,3 +131,5 @@ dmypy.json
 result*
 figure*
 MUJOCO*
+taiji
+start.sh
