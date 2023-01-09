@@ -78,7 +78,7 @@ def main():
         "test": make_real_runner(4),
         "train": make_real_runner(1),
     }
-    settings = [(runners["test"], policy, "Real Env")]
+    settings = [(runners["test"], policy, "Real_Env")]
 
     saver = nn.ModuleDict({"policy": policy, "vfn": vfn})
     logger.info(saver)
