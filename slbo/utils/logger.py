@@ -634,9 +634,10 @@ class Logger:
         :param level: the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
         """
         if self.level <= level:
-            context = args[0]
-            context = (f"{self._time()} - {self.find_caller()} - {context}",)
-            self._do_log(context)
+            contexts = tuple()
+            for context in args:
+                contexts += (f"{self._time()} - {self.find_caller()} - {context}",)
+            self._do_log(contexts)
 
     def debug(self, *args) -> None:
         """

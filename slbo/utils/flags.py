@@ -6,12 +6,14 @@ from subprocess import check_output, CalledProcessError
 from lunzi.config import BaseFLAGS, expand, parse
 from lunzi.Logger import logger, FileSink
 
+
 def get_raw_cmdline():
     with open("/proc/self/cmdline") as f:
         x = f.readlines()
     if x is None or len(x) == 0:
         return None
     return x[0].replace("\x00", " ")
+
 
 class FLAGS(BaseFLAGS):
     _initialized = False
@@ -97,7 +99,7 @@ class FLAGS(BaseFLAGS):
         batch_size = 64
         vf_coef = 0.5
         ent_coef = 0.0
-        lr = 1e-4
+        lr = 3e-4
         lr_decay = True
         clip_range = 0.2
         max_grad_norm = 0.5
