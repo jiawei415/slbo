@@ -80,11 +80,12 @@ def parse(cls):
     parser.add_argument("-a", "--alg", type=str, default="ppo")
     parser.add_argument("-e", "--env", type=str, default="half_cheetah")
     parser.add_argument("-s", "--seed", type=int, default=2023)
-    parser.add_argument("-l", "--logdir", type=str, default="./results/slbo")
+    parser.add_argument("-l", "--logdir", type=str, default="~/results/slbo")
 
     args, unknown = parser.parse_known_args()
     for a in unknown:
         logger.info("unknown arguments: %s", a)
+
     for config in [f"configs/algos/{args.alg}.yml", f"configs/envs/{args.env}.yml"]:
         cls.merge(yaml.load(open(expand(config)), Loader=yaml.FullLoader))
 
