@@ -92,6 +92,7 @@ def parse(cls):
     time_tag = time.strftime("%Y%m%d%H%M%S", time.localtime())
     run_id = f"{args.alg}_{args.env}_{args.seed}_{time_tag}"
     log_dir = os.path.join(args.logdir, args.env, run_id)
+    log_dir = os.path.expanduser(log_dir)
     cls.set_value(["run_id"], run_id)
     cls.set_value(["log_dir"], log_dir)
     cls.set_value(["seed"], args.seed)
