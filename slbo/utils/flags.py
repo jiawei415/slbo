@@ -99,7 +99,8 @@ class FLAGS(BaseFLAGS):
         batch_size = 64
         vf_coef = 0.5
         ent_coef = 0.0
-        lr = 3e-4
+        lr = 1e-3
+        lr_min = 3e-4
         lr_decay = True
         clip_range = 0.2
         max_grad_norm = 0.5

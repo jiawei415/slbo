@@ -1,11 +1,21 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 algorithm: PPO
 slbo:
-  n_stages: 15
+  n_stages: 50
   n_iters: 1
   n_policy_iters: 20
 rollout:
-  n_train_samples: 4000
+  n_train_samples: 1024
   n_test_samples: 10000
 policy:
   hidden_sizes: [64, 64]
+PPO:
+  n_opt_epochs: 5
+  batch_size: 64
+  vf_coef: 0.5
+  ent_coef: 0.01
+  lr: 0.001
+  lr_min: 0.0003
+  lr_decay: True
+  clip_range: 0.2
+  max_grad_norm: 0.5

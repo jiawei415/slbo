@@ -20,7 +20,8 @@ class PPO(nn.Module):
         n_update: int,
         vf_coef=0.25,
         ent_coef=0.0,
-        lr=3e-4,
+        lr=1e-3,
+        lr_min=3e-4,
         lr_decay=True,
         clip_range=0.2,
         max_grad_norm=0.5,
@@ -33,6 +34,8 @@ class PPO(nn.Module):
         self.policy = policy
         self.vf = vfn
         self.lr = lr
+        self.lr_min = lr_min
+        self.lr_decay = lr_decay
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
         self.clip_range = clip_range
@@ -40,7 +43,6 @@ class PPO(nn.Module):
         self.batch_size = batch_size
         self.n_opt_epochs = n_opt_epochs
         self.n_update = n_update
-        self.lr_decay = lr_decay
 
         self.old_policy: nn.Module = policy.clone()
 
@@ -52,7 +54,7 @@ class PPO(nn.Module):
                 dtype=tf.float32, shape=[None], name="advantages"
             )
             self.op_oldvalues = tf.placeholder(
-                dtype=tf.float32, shape=[None], name="oldvalue"
+                dtype=tf.float32, shape=[None], name="oldvalues"
             )
             self.op_states = tf.placeholder(
                 dtype=tf.float32, shape=[None, dim_state], name="states"
@@ -160,7 +162,7 @@ class PPO(nn.Module):
             ],
         )
         frac = 1.0 - update / self.n_update
-        lr = self.lr * frac if self.lr_decay else self.lr
+        lr = max(self.lr * frac, self.lr_min) if self.lr_decay else self.lr
         losses, pg_losses, vf_losses, grads_norm = [], [], [], []
         for _ in range(self.n_opt_epochs):
             for subset in dataset.iterator(self.batch_size):
