@@ -181,7 +181,7 @@ def main():
         }
         now_real_step += FLAGS.rollout.n_train_samples
 
-        if T == 0:  # check
+        if T == 1:  # check
             samples = train_set.sample_multi_step(100, 1, FLAGS.model.multi_step)
             for i in range(FLAGS.model.multi_step - 1):
                 masks = 1 - (samples.done[i] | samples.timeout[i])[..., np.newaxis]
@@ -194,7 +194,7 @@ def main():
         if (
             FLAGS.rollout.normalizer == "policy"
             or FLAGS.rollout.normalizer == "uniform"
-            and T == 0
+            and T == 1
         ):
             normalizers.state.update(recent_train_set.state)
             normalizers.action.update(recent_train_set.action)
