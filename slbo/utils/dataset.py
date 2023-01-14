@@ -6,16 +6,20 @@ import gym
 
 def gen_dtype(env: gym.Env, fields: str):
     dtypes = {
-        'state': ('state', 'f8', env.observation_space.shape),
-        'action': ('action', 'f8', env.action_space.shape),
-        'next_state': ('next_state', 'f8', env.observation_space.shape),
-        'reward': ('reward', 'f8'),
-        'done': ('done', 'bool'),
-        'timeout': ('timeout', 'bool'),
-        'return_': ('return_', 'f8'),
-        'advantage': ('advantage', 'f8'),
+        "state": ("state", "f8", env.observation_space.shape),
+        # "action": ("action", "f8", env.action_space.shape),
+        "next_state": ("next_state", "f8", env.observation_space.shape),
+        "reward": ("reward", "f8"),
+        "done": ("done", "bool"),
+        "timeout": ("timeout", "bool"),
+        "return_": ("return_", "f8"),
+        "advantage": ("advantage", "f8"),
     }
-    return [dtypes[field] for field in fields.split(' ')]
+    if isinstance(env.action_space, gym.spaces.Box):
+        dtypes.update({"action": ("action", "f8", env.action_space.shape)})
+    else:
+        dtypes.update({"action": ("action", "f8")})
+    return [dtypes[field] for field in fields.split(" ")]
 
 
 class Dataset(dataset.Dataset):
@@ -25,4 +29,3 @@ class Dataset(dataset.Dataset):
         for step in range(n_step):
             batch.append(self[(starts + step * n_env) % self._len])
         return np.concatenate(batch).reshape(n_step, size).view(np.recarray)
-

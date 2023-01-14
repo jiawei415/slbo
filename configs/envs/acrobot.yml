@@ -1,0 +1,6 @@
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+env:
+  id: Acrobot-v1
+  action_type: discrete
+runner:
+  max_steps: 500

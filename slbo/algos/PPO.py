@@ -18,6 +18,7 @@ class PPO(nn.Module):
         policy: BaseNNPolicy,
         vfn: BaseVFunction,
         n_update: int,
+        action_type: str,
         vf_coef=0.25,
         ent_coef=0.0,
         lr=1e-3,
@@ -43,6 +44,7 @@ class PPO(nn.Module):
         self.batch_size = batch_size
         self.n_opt_epochs = n_opt_epochs
         self.n_update = n_update
+        self.action_type = action_type
 
         self.old_policy: nn.Module = policy.clone()
 
@@ -59,9 +61,14 @@ class PPO(nn.Module):
             self.op_states = tf.placeholder(
                 dtype=tf.float32, shape=[None, dim_state], name="states"
             )
-            self.op_actions = tf.placeholder(
-                dtype=tf.float32, shape=[None, dim_action], name="actions"
-            )
+            if action_type == "continuous":
+                self.op_actions = tf.placeholder(
+                    dtype=tf.float32, shape=[None, dim_action], name="actions"
+                )
+            elif action_type == "discrete":
+                self.op_actions = tf.placeholder(
+                    dtype=tf.float32, shape=[None], name="actions"
+                )
             self.op_lr = tf.placeholder(dtype=tf.float32, shape=[], name="lr")
 
         self.op_sync_old = self.update_old_policy()
@@ -90,18 +97,21 @@ class PPO(nn.Module):
         return sync_old
 
     def compute_loss(self, states, actions, advantages, returns, oldvalues, lr):
-        old_distribution: tf.distributions.Normal = self.old_policy(states)
-        distribution: tf.distributions.Normal = self.policy(states)
+        old_distribution: tf.distributions.Distribution = self.old_policy(states)
+        distribution: tf.distributions.Distribution = self.policy(states)
 
         # entropy loss
-        entropy = distribution.entropy().reduce_sum(axis=1).reduce_mean()
+        entropy = distribution.entropy()
+        if len(entropy.shape) > 1:
+            entropy = entropy.reduce_sum(axis=1)
+        entropy = tf.reduce_mean(entropy)
 
         # policy loss
-        ratios: Tensor = (
-            (distribution.log_prob(actions) - old_distribution.log_prob(actions))
-            .reduce_sum(axis=1)
-            .exp()
-        )
+        ratios = distribution.log_prob(actions) - old_distribution.log_prob(actions)
+        if len(ratios.shape) > 1:
+            ratios = ratios.reduce_mean(axis=1)
+        ratios = ratios.exp()
+
         pg_losses1 = advantages * ratios
         pg_losses2 = advantages * tf.clip_by_value(
             ratios, 1.0 - self.clip_range, 1.0 + self.clip_range
@@ -151,15 +161,19 @@ class PPO(nn.Module):
         assert np.isfinite(advantages).all()
 
         self.sync_old()
+        dtype = [
+            ("advantages", "f8"),
+            ("returns", "f8"),
+            ("oldvalues", "f8"),
+            ("state", "f8", (self.dim_state,)),
+        ]
+        if self.action_type == "continuous":
+            dtype.append(("action", "f8", (self.dim_action,)))
+        elif self.action_type == "discrete":
+            dtype.append(("action", "f8"))
         dataset = Dataset.fromarrays(
-            [samples.state, samples.action, advantages, returns, values],
-            dtype=[
-                ("state", "f8", (self.dim_state,)),
-                ("action", "f8", (self.dim_action,)),
-                ("advantages", "f8"),
-                ("returns", "f8"),
-                ("oldvalues", "f8"),
-            ],
+            [advantages, returns, values, samples.state, samples.action],
+            dtype=dtype,
         )
         frac = 1.0 - update / self.n_update
         lr = max(self.lr * frac, self.lr_min) if self.lr_decay else self.lr

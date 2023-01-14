@@ -8,6 +8,7 @@ from slbo.utils.normalizer import Normalizers
 from slbo.utils.tf_utils import get_tf_config
 from slbo.utils.runner import Runner
 from slbo.policies.gaussian_mlp_policy import GaussianMLPPolicy
+from slbo.policies.discrete_mlp_policy import DiscreteMLPPolicy
 from slbo.v_function.mlp_v_function import MLPVFunction
 from slbo.partial_envs import make_env
 from slbo.algos.PPO import PPO
@@ -45,7 +46,11 @@ def make_real_runner(n_envs):
     from slbo.envs.batched_env import BatchedEnv
 
     batched_env = BatchedEnv([make_env(FLAGS.env.id) for _ in range(n_envs)])
-    return Runner(batched_env, rescale_action=True, **FLAGS.runner.as_dict())
+    return Runner(
+        batched_env,
+        rescale_action=bool(FLAGS.env.action_type == "continuous"),
+        **FLAGS.runner.as_dict(),
+    )
 
 
 def main():
@@ -54,15 +59,29 @@ def main():
 
     env = make_env(FLAGS.env.id)
     dim_state = int(np.prod(env.observation_space.shape))
-    dim_action = int(np.prod(env.action_space.shape))
+    if FLAGS.env.action_type == "continuous":
+        dim_action = int(np.prod(env.action_space.shape))
+    elif FLAGS.env.action_type == "discrete":
+        dim_action = env.action_space.n
 
-    env.verify()
+    # env.verify()
 
     normalizers = Normalizers(dim_action=dim_action, dim_state=dim_state)
 
-    policy = GaussianMLPPolicy(
-        dim_state, dim_action, normalizer=normalizers.state, **FLAGS.policy.as_dict()
-    )
+    if FLAGS.env.action_type == "continuous":
+        policy = GaussianMLPPolicy(
+            dim_state,
+            dim_action,
+            normalizer=normalizers.state,
+            **FLAGS.policy.as_dict(),
+        )
+    elif FLAGS.env.action_type == "discrete":
+        policy = DiscreteMLPPolicy(
+            dim_state,
+            dim_action,
+            normalizer=normalizers.state,
+            **FLAGS.policy.as_dict(),
+        )
     vfn = MLPVFunction(dim_state, hidden_sizes=[64, 64], normalizer=normalizers.state)
     n_update = FLAGS.slbo.n_stages * FLAGS.slbo.n_iters * FLAGS.slbo.n_policy_iters
     algo = PPO(
@@ -71,6 +90,7 @@ def main():
         dim_state=dim_state,
         dim_action=dim_action,
         n_update=n_update,
+        action_type=FLAGS.env.action_type,
         **FLAGS.PPO.as_dict(),
     )
 
