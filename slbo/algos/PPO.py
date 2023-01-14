@@ -154,8 +154,8 @@ class PPO(nn.Module):
         dataset = Dataset.fromarrays(
             [samples.state, samples.action, advantages, returns, values],
             dtype=[
-                ("state", ("f8", self.dim_state)),
-                ("action", ("f8", self.dim_action)),
+                ("state", "f8", (self.dim_state,)),
+                ("action", "f8", (self.dim_action,)),
                 ("advantages", "f8"),
                 ("returns", "f8"),
                 ("oldvalues", "f8"),
