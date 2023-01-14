@@ -7,6 +7,7 @@ from slbo.envs.mujoco.humanoid_env import HumanoidEnv
 from slbo.envs.mujoco.ant_env import AntEnv
 from slbo.envs.mujoco.hopper_env import HopperEnv
 from slbo.envs.mujoco.swimmer_env import SwimmerEnv
+from slbo.envs.mujoco.cartpole import CartPole
 
 
 def make_env(id: str):
@@ -17,6 +18,7 @@ def make_env(id: str):
         "Ant-v2": AntEnv,
         "Hopper-v2": HopperEnv,
         "Swimmer-v2": SwimmerEnv,
+        "CartPole-v0": CartPole,
     }
     if id in envs.keys():
         env = envs[id]()

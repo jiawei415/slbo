@@ -2,6 +2,7 @@
 import numpy as np
 import lunzi.dataset as dataset
 import gym
+from gym import spaces
 
 
 def gen_dtype(env: gym.Env, fields: str):
@@ -15,10 +16,10 @@ def gen_dtype(env: gym.Env, fields: str):
         "return_": ("return_", "f8"),
         "advantage": ("advantage", "f8"),
     }
-    if isinstance(env.action_space, gym.spaces.Box):
-        dtypes.update({"action": ("action", "f8", env.action_space.shape)})
-    else:
+    if isinstance(env.action_space, spaces.Discrete):
         dtypes.update({"action": ("action", "f8")})
+    else:
+        dtypes.update({"action": ("action", "f8", env.action_space.shape)})
     return [dtypes[field] for field in fields.split(" ")]
 
 

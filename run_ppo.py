@@ -64,7 +64,7 @@ def main():
     elif FLAGS.env.action_type == "discrete":
         dim_action = env.action_space.n
 
-    # env.verify()
+    env.verify()
 
     normalizers = Normalizers(dim_action=dim_action, dim_state=dim_state)
 

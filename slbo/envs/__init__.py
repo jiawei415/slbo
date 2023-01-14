@@ -22,7 +22,7 @@ class BaseBatchedEnv(gym.Env, abc.ABC):
         pass
 
     def set_state(self, state):
-        logger.warning('`set_state` is not implemented')
+        logger.warning("`set_state` is not implemented")
 
 
 class BaseModelBasedEnv(gym.Env, abc.ABC):
@@ -31,7 +31,7 @@ class BaseModelBasedEnv(gym.Env, abc.ABC):
         raise NotImplementedError
 
     def verify(self, n=2000, eps=1e-4):
-        dataset = Dataset(gen_dtype(self, 'state action next_state reward done'), n)
+        dataset = Dataset(gen_dtype(self, "state action next_state reward done"), n)
         state = self.reset()
         for _ in range(n):
             action = self.action_space.sample()
@@ -42,14 +42,14 @@ class BaseModelBasedEnv(gym.Env, abc.ABC):
             if done:
                 state = self.reset()
 
-        rewards_, dones_ = self.mb_step(dataset.state, dataset.action, dataset.next_state)
+        rewards_, dones_ = self.mb_step(
+            dataset.state, dataset.action, dataset.next_state
+        )
         diff = dataset.reward - rewards_
         l_inf = np.abs(diff).max()
-        logger.info('rewarder difference: %.6f', l_inf)
-
+        logger.info("rewarder difference: %.6f", l_inf)
         assert np.allclose(dones_, dataset.done)
         assert l_inf < eps
 
     def seed(self, seed: int = None):
         pass
-
