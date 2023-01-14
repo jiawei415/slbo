@@ -86,6 +86,7 @@ def parse(cls):
     for a in unknown:
         logger.info("unknown arguments: %s", a)
 
+    cls.config.merge(vars(args))
     for config in [f"configs/algos/{args.alg}.yml", f"configs/envs/{args.env}.yml"]:
         cls.merge(yaml.load(open(expand(config)), Loader=yaml.FullLoader))
 

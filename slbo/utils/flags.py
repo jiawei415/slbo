@@ -89,6 +89,26 @@ class FLAGS(BaseFLAGS):
         optimizer = "Adam"
         train_batch_size = 256
         dev_batch_size = 1024
+        model_load_path = None
+
+    class RTPO(BaseFLAGS):
+        # model
+        step = 2
+        model_lr = 1e-3
+        model_weight_decay = 1e-5
+        model_max_grad_norm = 2.0
+        sp_coef = 1.0
+        # policy
+        rpo_coef = 1.0
+        n_opt_epochs = 10
+        batch_size = 64
+        vf_coef = 0.5
+        ent_coef = 0.0
+        lr = 3e-4
+        lr_min = 3e-4
+        lr_decay = False
+        clip_range = 0.2
+        max_grad_norm = 0.5
 
     class policy(BaseFLAGS):
         hidden_sizes = [32, 32]
@@ -117,6 +137,12 @@ class FLAGS(BaseFLAGS):
         lambda_ = 0.95
         gamma = 0.99
         max_steps = 500
+
+    class config(BaseFLAGS):
+        seed = 2023
+        alg = "slbo"
+        env = "half_cheetah"
+        logdir = "~/results/slbo"
 
     @classmethod
     def set_seed(cls):
