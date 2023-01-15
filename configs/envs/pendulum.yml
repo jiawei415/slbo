@@ -1,6 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 env:
   id: Pendulum-v0
+  source_config: {g: 10.0}
+  target_config: {g: 3.72}
 runner:
   max_steps: 200
 PPO:
@@ -11,8 +13,5 @@ PPO:
   lr: 0.0005
   lr_min: 0.0001
   lr_decay: True
-env:
-  source_config: {length: 10.0}
-  target_config: {length: 3.72}
 model:
   model_load_path: None

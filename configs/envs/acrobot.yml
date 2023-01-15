@@ -2,14 +2,13 @@
 env:
   id: Acrobot-v1
   action_type: discrete
+  source_config: {mass_1: 1.0, mass_2: 1.0}
+  target_config: {mass_1: 0.1, mass_2: 0.1}
 runner:
   max_steps: 500
 slbo:
   n_stages: 10
   n_iters: 1
   n_policy_iters: 10
-env:
-  source_config: {mass_1: 1.0, mass_2: 1.0}
-  target_config: {mass_1: 0.1, mass_2: 0.1}
 model:
   model_load_path: None

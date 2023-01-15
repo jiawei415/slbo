@@ -2,14 +2,13 @@
 env:
   id: CartPole-v0
   action_type: discrete
+  source_config: {length: 0.5}
+  target_config: {length: 0.6}
 runner:
   max_steps: 200
 slbo:
   n_stages: 20
   n_iters: 1
   n_policy_iters: 1
-env:
-  source_config: {length: 0.5}
-  target_config: {length: 0.6}
 model:
   model_load_path: None
