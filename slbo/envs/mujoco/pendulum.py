@@ -30,10 +30,13 @@ class Pendulum(BaseModelBasedEnv, gym.Env):
 
     def mb_step(self, states, actions, next_states):
         reward = self._reward_func(states, actions)
+        assert np.isfinite(reward).all()
         return reward, np.zeros(states.shape[0]).astype(np.bool)
 
     def _reward_func(self, obs, action):
-        th, thdot = np.arccos(obs[:, 0]), obs[:, -1]
+        cos_th = np.clip(obs[:, 0], -1, 1)
+        th = np.arccos(cos_th)
+        thdot = obs[:, -1]
         u = np.clip(action.squeeze(), self.action_space.low, self.action_space.high)
         costs = (
             np.square(self._angle_normalize(th))
