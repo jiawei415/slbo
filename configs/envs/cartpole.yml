@@ -4,3 +4,7 @@ env:
   action_type: discrete
 runner:
   max_steps: 200
+slbo:
+  n_stages: 20
+  n_iters: 1
+  n_policy_iters: 1

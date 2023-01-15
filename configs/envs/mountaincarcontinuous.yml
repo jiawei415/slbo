@@ -3,3 +3,7 @@ env:
   id: MountainCarContinuous-v0
 runner:
   max_steps: 500
+slbo:
+  n_stages: 20
+  n_iters: 1
+  n_policy_iters: 10
