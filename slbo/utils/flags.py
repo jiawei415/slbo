@@ -83,7 +83,7 @@ class FLAGS(BaseFLAGS):
         hidden_sizes = [500, 500]
         loss = "L2"  # possibly L1, L2, MSE, G
         G_coef = 0.5
-        multi_step = 1
+        multi_step = 2
         lr = 1e-3
         weight_decay = 1e-5
         validation_freq = 1

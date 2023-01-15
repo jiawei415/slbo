@@ -21,6 +21,7 @@ class RTPO(nn.Module):
         normalizers: Normalizers,
         criterion: nn.Module,
         n_update: int,
+        action_type: str,
         # model
         step=4,
         weight_decay=1e-5,
@@ -64,6 +65,7 @@ class RTPO(nn.Module):
         self.batch_size = batch_size
         self.n_opt_epochs = n_opt_epochs
         self.n_update = n_update
+        self.action_type = action_type
 
         self.old_policy: nn.Module = policy.clone()
 
@@ -81,24 +83,32 @@ class RTPO(nn.Module):
             self.op_sim_states = tf.placeholder(
                 dtype=tf.float32, shape=[None, dim_state], name="sim_states"
             )
-            self.op_sim_actions = tf.placeholder(
-                dtype=tf.float32, shape=[None, dim_action], name="sim_actions"
-            )
             self.op_tar_returns = tf.placeholder(
-                dtype=tf.float32, shape=[None], name="tar_rreturns"
+                dtype=tf.float32, shape=[None], name="tar_returns"
             )
             self.op_tar_advantages = tf.placeholder(
-                dtype=tf.float32, shape=[None], name="tar_radvantages"
+                dtype=tf.float32, shape=[None], name="tar_advantages"
             )
             self.op_tar_oldvalues = tf.placeholder(
-                dtype=tf.float32, shape=[None], name="tar_roldvalues"
+                dtype=tf.float32, shape=[None], name="tar_oldvalues"
             )
             self.op_tar_states = tf.placeholder(
-                dtype=tf.float32, shape=[None, dim_state], name="tar_rstates"
+                dtype=tf.float32, shape=[None, dim_state], name="tar_states"
             )
-            self.op_tar_actions = tf.placeholder(
-                dtype=tf.float32, shape=[None, dim_action], name="tar_ractions"
-            )
+            if action_type == "continuous":
+                self.op_tar_actions = tf.placeholder(
+                    dtype=tf.float32, shape=[None, dim_action], name="tar_ractions"
+                )
+                self.op_sim_actions = tf.placeholder(
+                    dtype=tf.float32, shape=[None, dim_action], name="sim_actions"
+                )
+            elif action_type == "discrete":
+                self.op_tar_actions = tf.placeholder(
+                    dtype=tf.float32, shape=[None], name="tar_ractions"
+                )
+                self.op_sim_actions = tf.placeholder(
+                    dtype=tf.float32, shape=[None], name="sim_actions"
+                )
             # for rto
             self.op_states = tf.placeholder(tf.float32, shape=[step, None, dim_state])
             self.op_actions = tf.placeholder(tf.float32, shape=[step, None, dim_action])
@@ -142,14 +152,14 @@ class RTPO(nn.Module):
         # tar policy loss
         tar_distribution_old = self.old_policy(self.op_tar_states)
         tar_distribution = self.policy(self.op_tar_states)
-        tar_ratios: Tensor = (
-            (
-                tar_distribution.log_prob(self.op_tar_actions)
-                - tar_distribution_old.log_prob(self.op_tar_actions)
-            )
-            .reduce_sum(axis=1)
-            .exp()
-        )
+
+        tar_ratios = tar_distribution.log_prob(
+            self.op_tar_actions
+        ) - tar_distribution_old.log_prob(self.op_tar_actions)
+        if len(tar_ratios.shape) > 1:
+            tar_ratios = tar_ratios.reduce_mean(axis=1)
+        tar_ratios = tar_ratios.exp()
+
         pg_tar_losses1 = self.op_tar_advantages * tar_ratios
         pg_tar_losses2 = self.op_tar_advantages * tf.clip_by_value(
             tar_ratios, 1.0 - self.clip_range, 1.0 + self.clip_range
@@ -159,14 +169,14 @@ class RTPO(nn.Module):
         # sim policy loss
         sim_distribution_old = self.old_policy(self.op_sim_states)
         sim_distribution = self.policy(self.op_sim_states)
-        sim_ratios: Tensor = (
-            (
-                sim_distribution.log_prob(self.op_sim_actions)
-                - sim_distribution_old.log_prob(self.op_sim_actions)
-            )
-            .reduce_sum(axis=1)
-            .exp()
-        )
+
+        sim_ratios = sim_distribution.log_prob(
+            self.op_sim_actions
+        ) - sim_distribution_old.log_prob(self.op_sim_actions)
+        if len(sim_ratios.shape) > 1:
+            sim_ratios = sim_ratios.reduce_mean(axis=1)
+        sim_ratios = sim_ratios.exp()
+
         pg_sim_losses1 = self.op_sim_advantages * sim_ratios
         pg_sim_losses2 = self.op_sim_advantages * tf.clip_by_value(
             sim_ratios, 1.0 - self.clip_range, 1.0 + self.clip_range
@@ -174,7 +184,10 @@ class RTPO(nn.Module):
         pg_sim_loss = -tf.minimum(pg_sim_losses1, pg_sim_losses2).reduce_mean()
 
         # entropy loss
-        entropy = sim_distribution.entropy().reduce_sum(axis=1).reduce_mean()
+        entropy = sim_distribution.entropy()
+        if len(entropy.shape) > 1:
+            entropy = entropy.reduce_sum(axis=1)
+        entropy = tf.reduce_mean(entropy)
 
         rpo_loss = (
             pg_sim_loss
@@ -269,10 +282,17 @@ class RTPO(nn.Module):
     def get_rto_loss(self, states, next_states, actions, masks) -> List[np.ndarray]:
         pass
 
-    def train_rto(self, states, next_states_, actions, masks):
+    def train_rto(self, states, next_states, actions, masks):
+        if self.action_type == "discrete":
+            one_hot_actions = np.zeros(actions.shape + (self.dim_action,))
+            for i in range(actions.shape[0]):
+                one_hot_actions[
+                    i, np.arange(actions.shape[1]), actions[0].astype(np.int64)
+                ] = 1
+            actions = one_hot_actions
         rto_loss, dy_loss, model_grad_norm, _ = self.get_rto_loss(
             states,
-            next_states_,
+            next_states,
             actions,
             masks,
             fetch="rto_loss dy_loss model_grad_norm train_model",
@@ -302,31 +322,36 @@ class RTPO(nn.Module):
         assert np.isfinite(sim_advantages).all() and np.isfinite(tar_advantages).all()
 
         self.sync_old()
+        dtype = [
+            ("sim_state", ("f8", self.dim_state)),
+            ("sim_advantages", "f8"),
+            ("sim_returns", "f8"),
+            ("sim_oldvalues", "f8"),
+            ("tar_state", ("f8", self.dim_state)),
+            ("tar_advantages", "f8"),
+            ("tar_returns", "f8"),
+            ("tar_oldvalues", "f8"),
+        ]
+        if self.action_type == "continuous":
+            dtype.append(("sim_action", "f8", (self.dim_action,)))
+            dtype.append(("tar_action", "f8", (self.dim_action,)))
+        elif self.action_type == "discrete":
+            dtype.append(("sim_action", "f8"))
+            dtype.append(("tar_action", "f8"))
         dataset = Dataset.fromarrays(
             [
                 sim_samples.state,
-                sim_samples.action,
                 sim_advantages,
                 sim_returns,
                 sim_values,
                 tar_samples.state,
-                tar_samples.action,
                 tar_advantages,
                 tar_returns,
                 tar_values,
+                sim_samples.action,
+                tar_samples.action,
             ],
-            dtype=[
-                ("sim_state", ("f8", self.dim_state)),
-                ("sim_action", ("f8", self.dim_action)),
-                ("sim_advantages", "f8"),
-                ("sim_returns", "f8"),
-                ("sim_oldvalues", "f8"),
-                ("tar_state", ("f8", self.dim_state)),
-                ("tar_action", ("f8", self.dim_action)),
-                ("tar_advantages", "f8"),
-                ("tar_returns", "f8"),
-                ("tar_oldvalues", "f8"),
-            ],
+            dtype=dtype,
         )
         frac = 1.0 - update / self.n_update
         lr = max(self.lr * frac, self.lr_min) if self.lr_decay else self.lr

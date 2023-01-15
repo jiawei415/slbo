@@ -237,8 +237,7 @@ def main():
             )
         elif FLAGS.env.action_type == "discrete":
             add_multi_step(
-                runners["dev"].run(policy, FLAGS.rollout.n_dev_samples)[0],
-                dev_set,
+                runners["dev"].run(policy, FLAGS.rollout.n_dev_samples)[0], dev_set
             )
 
         if T == 50:
