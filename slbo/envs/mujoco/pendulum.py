@@ -6,10 +6,10 @@ from slbo.envs import BaseModelBasedEnv
 
 
 class Pendulum(BaseModelBasedEnv, gym.Env):
-    def __init__(self) -> None:
+    def __init__(self, g=10.0, **kwargs) -> None:
         super().__init__()
         # self.env = gym.make("Pendulum-v0").env
-        self.env = PendulumEnv()
+        self.env = PendulumEnv(g=g)
 
     @property
     def observation_space(self):
@@ -49,7 +49,8 @@ class Pendulum(BaseModelBasedEnv, gym.Env):
 class PendulumEnv(gym.Env):
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 30}
 
-    def __init__(self):
+    def __init__(self, g=10.0):
+        self.g = g
         self.max_speed = 8
         self.max_torque = 2.0
         self.dt = 0.05
@@ -70,7 +71,7 @@ class PendulumEnv(gym.Env):
     def step(self, u):
         th, thdot = self.state  # th := theta
 
-        g = 10.0
+        # g = 10.0
         m = 1.0
         l = 1.0
         dt = self.dt
@@ -81,7 +82,7 @@ class PendulumEnv(gym.Env):
 
         newthdot = (
             thdot
-            + (-3 * g / (2 * l) * np.sin(th + np.pi) + 3.0 / (m * l**2) * u) * dt
+            + (-3 * self.g / (2 * l) * np.sin(th + np.pi) + 3.0 / (m * l**2) * u) * dt
         )
         newth = th + newthdot * dt
         newthdot = np.clip(

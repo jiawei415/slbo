@@ -6,13 +6,18 @@ from slbo.envs import BaseModelBasedEnv
 
 
 class Walker2DEnv(walker2d_env.Walker2DEnv, BaseModelBasedEnv):
+    def __init__(self, version="v1", ctrl_cost_coeff=0.01, *args, **kwargs):
+        super().__init__(version, ctrl_cost_coeff, *args, **kwargs)
+
     def get_current_obs(self):
-        return np.concatenate([
-            self.model.data.qpos.flat,
-            self.model.data.qvel.flat,
-            self.get_body_com("torso").flat,
-            self.get_body_comvel("torso").flat
-        ])
+        return np.concatenate(
+            [
+                self.model.data.qpos.flat,
+                self.model.data.qvel.flat,
+                self.get_body_com("torso").flat,
+                self.get_body_comvel("torso").flat,
+            ]
+        )
 
     def step(self, action):
         self.forward_dynamics(action)
@@ -20,10 +25,12 @@ class Walker2DEnv(walker2d_env.Walker2DEnv, BaseModelBasedEnv):
         lb, ub = self.action_bounds
         scaling = (ub - lb) * 0.5
         ctrl_cost = 1e-3 * np.sum(np.square(action / scaling))
-        alive_bonus = 1.
+        alive_bonus = 1.0
         reward = forward_reward - ctrl_cost + alive_bonus
         qpos = self.model.data.qpos
-        done = not (qpos[0] > 0.8 and qpos[0] < 2.0 and qpos[2] > -1.0 and qpos[2] < 1.0)
+        done = not (
+            qpos[0] > 0.8 and qpos[0] < 2.0 and qpos[2] > -1.0 and qpos[2] < 1.0
+        )
         next_obs = self.get_current_obs()
         return Step(next_obs, reward, done)
 
@@ -33,11 +40,13 @@ class Walker2DEnv(walker2d_env.Walker2DEnv, BaseModelBasedEnv):
 
         reward_ctrl = -0.001 * np.sum(np.square(actions / scaling), axis=-1)
         reward_fwd = next_states[:, 21]
-        alive_bonus = 1.
+        alive_bonus = 1.0
         rewards = reward_ctrl + reward_fwd + alive_bonus
 
-        dones = ~((next_states[:, 0] > 0.8) &
-                  (next_states[:, 0] < 2.0) &
-                  (next_states[:, 2] > -1.0) &
-                  (next_states[:, 2] < 1.0))
+        dones = ~(
+            (next_states[:, 0] > 0.8)
+            & (next_states[:, 0] < 2.0)
+            & (next_states[:, 2] > -1.0)
+            & (next_states[:, 2] < 1.0)
+        )
         return rewards, dones

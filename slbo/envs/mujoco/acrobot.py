@@ -7,10 +7,10 @@ from slbo.envs import BaseModelBasedEnv
 
 
 class Acrobot(BaseModelBasedEnv, gym.Env):
-    def __init__(self) -> None:
+    def __init__(self, mass_1=1.0, mass_2=1.0, **kwargs) -> None:
         super().__init__()
         # self.env = gym.make("Acrobot-v1").env
-        self.env = AcrobotEnv()
+        self.env = AcrobotEnv(mass_1=mass_1, mass_2=mass_2)
 
     @property
     def observation_space(self):
@@ -84,8 +84,8 @@ class AcrobotEnv(gym.Env):
 
     LINK_LENGTH_1 = 1.0  # [m]
     LINK_LENGTH_2 = 1.0  # [m]
-    LINK_MASS_1 = 1.0  #: [kg] mass of link 1
-    LINK_MASS_2 = 1.0  #: [kg] mass of link 2
+    # LINK_MASS_1 = 1.0  #: [kg] mass of link 1
+    # LINK_MASS_2 = 1.0  #: [kg] mass of link 2
     LINK_COM_POS_1 = 0.5  #: [m] position of the center of mass of link 1
     LINK_COM_POS_2 = 0.5  #: [m] position of the center of mass of link 2
     LINK_MOI = 1.0  #: moments of inertia for both links
@@ -103,7 +103,9 @@ class AcrobotEnv(gym.Env):
     domain_fig = None
     actions_num = 3
 
-    def __init__(self):
+    def __init__(self, mass_1=1.0, mass_2=1.0):
+        self.LINK_MASS_1 = mass_1  #: [kg] mass of link 1
+        self.LINK_MASS_2 = mass_2  #: [kg] mass of link 2
         self.viewer = None
         high = np.array([1.0, 1.0, 1.0, 1.0, self.MAX_VEL_1, self.MAX_VEL_2])
         low = -high

@@ -7,10 +7,10 @@ from slbo.envs import BaseModelBasedEnv
 
 
 class MountainCarContinuous(BaseModelBasedEnv, gym.Env):
-    def __init__(self) -> None:
+    def __init__(self, g=0.0025, **kwargs) -> None:
         super().__init__()
         # self.env = gym.make("MountainCarContinuous-v0").env
-        self.env = Continuous_MountainCarEnv()
+        self.env = Continuous_MountainCarEnv(g=g)
         self.goal_position = 0.45
 
     @property
@@ -43,7 +43,8 @@ class MountainCarContinuous(BaseModelBasedEnv, gym.Env):
 class Continuous_MountainCarEnv(gym.Env):
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 30}
 
-    def __init__(self):
+    def __init__(self, g=0.0025):
+        self.g = g
         self.min_action = -1.0
         self.max_action = 1.0
         self.min_position = -1.2
@@ -75,7 +76,7 @@ class Continuous_MountainCarEnv(gym.Env):
         velocity = self.state[1]
         force = min(max(action[0], -1.0), 1.0)
 
-        velocity += force * self.power - 0.0025 * math.cos(3 * position)
+        velocity += force * self.power - self.g * math.cos(3 * position)
         if velocity > self.max_speed:
             velocity = self.max_speed
         if velocity < -self.max_speed:

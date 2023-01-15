@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class CartPole(BaseModelBasedEnv, gym.Env):
-    def __init__(self) -> None:
+    def __init__(self, length=0.5, **kwargs) -> None:
         super().__init__()
         # self.env = gym.make("CartPole-v0").env
-        self.env = CartPoleEnv()
+        self.env = CartPoleEnv(length=length)
         self.theta_threshold_radians = 12 * 2 * np.pi / 360
         self.x_threshold = 2.4
 
@@ -53,12 +53,12 @@ class CartPole(BaseModelBasedEnv, gym.Env):
 class CartPoleEnv(gym.Env):
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 50}
 
-    def __init__(self):
+    def __init__(self, length=0.5):
         self.gravity = 9.8
         self.masscart = 1.0
         self.masspole = 0.1
         self.total_mass = self.masspole + self.masscart
-        self.length = 0.5  # actually half the pole's length
+        self.length = length  # actually half the pole's length
         self.polemass_length = self.masspole * self.length
         self.force_mag = 10.0
         self.tau = 0.02  # seconds between state updates

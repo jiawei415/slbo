@@ -5,13 +5,18 @@ from slbo.envs import BaseModelBasedEnv
 
 
 class HalfCheetahEnv(half_cheetah_env.HalfCheetahEnv, BaseModelBasedEnv):
+    def __init__(self, version="v1", *args, **kwargs):
+        super().__init__(version, *args, **kwargs)
+
     def get_current_obs(self):
-        return np.concatenate([
-            self.model.data.qpos.flat,  # 9
-            self.model.data.qvel.flat,  # 9
-            self.get_body_com("torso").flat,  # 3
-            self.get_body_comvel("torso").flat,  # 3
-        ])
+        return np.concatenate(
+            [
+                self.model.data.qpos.flat,  # 9
+                self.model.data.qvel.flat,  # 9
+                self.get_body_com("torso").flat,  # 3
+                self.get_body_comvel("torso").flat,  # 3
+            ]
+        )
 
     def mb_step(self, states, actions, next_states):
         actions = np.clip(actions, *self.action_bounds)

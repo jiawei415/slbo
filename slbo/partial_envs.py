@@ -12,7 +12,8 @@ from slbo.envs.mujoco.pendulum import Pendulum
 from slbo.envs.mujoco.acrobot import Acrobot
 from slbo.envs.mujoco.mountaincarcontinuous import MountainCarContinuous
 
-def make_env(id: str):
+
+def make_env(id: str, env_config: dict = {}):
     envs = {
         "HalfCheetah-v2": HalfCheetahEnv,
         "Walker2D-v2": Walker2DEnv,
@@ -26,7 +27,7 @@ def make_env(id: str):
         "MountainCarContinuous-v0": MountainCarContinuous,
     }
     if id in envs.keys():
-        env = envs[id]()
+        env = envs[id](**env_config)
     else:
         env = gym.make(id)
     if not hasattr(env, "reward_range"):
