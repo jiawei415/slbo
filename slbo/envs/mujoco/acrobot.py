@@ -3,12 +3,10 @@ import numpy as np
 from slbo.envs import BaseModelBasedEnv
 
 
-class CartPole(BaseModelBasedEnv, gym.Env):
+class Acrobot(BaseModelBasedEnv, gym.Env):
     def __init__(self) -> None:
         super().__init__()
-        self.env = gym.make("CartPole-v0").env
-        self.theta_threshold_radians = 12 * 2 * np.pi / 360
-        self.x_threshold = 2.4
+        self.env = gym.make("Acrobot-v1").env
 
     @property
     def observation_space(self):
@@ -28,15 +26,12 @@ class CartPole(BaseModelBasedEnv, gym.Env):
         return self.env.seed(seed)
 
     def mb_step(self, states, actions, next_states):
-        reward = np.ones(states.shape[0])
         done = self._done_func(next_states)
+        reward = np.zeros_like(done, dtype=np.float32)
+        reward[np.where(done==False)[0]] = -1
         return reward, done
 
     def _done_func(self, obs):
-        x, theta = obs[:, 0], obs[:, 2]
-        x_done = (x < -self.x_threshold) | (x > self.x_threshold)
-        theta_done = (theta < -self.theta_threshold_radians) | (
-            theta > self.theta_threshold_radians
-        )
-        done = x_done | theta_done
+        cos_0, sin_0, cos_1, sin_1 = obs[:, 0], obs[:, 1], obs[:, 2], obs[:, 3]
+        done= -cos_0 - (cos_1 * cos_0 - sin_1 * sin_0) > 1.0
         return done

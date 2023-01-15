@@ -8,7 +8,9 @@ from slbo.envs.mujoco.ant_env import AntEnv
 from slbo.envs.mujoco.hopper_env import HopperEnv
 from slbo.envs.mujoco.swimmer_env import SwimmerEnv
 from slbo.envs.mujoco.cartpole import CartPole
-
+from slbo.envs.mujoco.pendulum import Pendulum
+from slbo.envs.mujoco.acrobot import Acrobot
+from slbo.envs.mujoco.mountaincarcontinuous import MountainCarContinuous
 
 def make_env(id: str):
     envs = {
@@ -19,6 +21,9 @@ def make_env(id: str):
         "Hopper-v2": HopperEnv,
         "Swimmer-v2": SwimmerEnv,
         "CartPole-v0": CartPole,
+        "Pendulum-v0": Pendulum,
+        "Acrobot-v1": Acrobot,
+        "MountainCarContinuous-v0": MountainCarContinuous,
     }
     if id in envs.keys():
         env = envs[id]()
