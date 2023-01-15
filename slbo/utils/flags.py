@@ -49,7 +49,8 @@ class FLAGS(BaseFLAGS):
         id = "HalfCheetah-v2"
         action_type = "continuous"  # "discrete"
         env_config = {}
-
+        source_config = {}
+        target_config = {}
 
     class rollout(BaseFLAGS):
         normalizer = "policy"

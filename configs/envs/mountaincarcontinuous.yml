@@ -7,3 +7,8 @@ slbo:
   n_stages: 20
   n_iters: 1
   n_policy_iters: 10
+env:
+  source_config: {length: 0.0025}
+  target_config: {length: 0.0060}
+model:
+  model_load_path: None

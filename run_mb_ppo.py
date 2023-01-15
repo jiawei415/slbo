@@ -74,7 +74,7 @@ def main():
     FLAGS.set_seed()
     FLAGS.freeze()
 
-    env = make_env(FLAGS.env.id, FLAGS.env.env_config)
+    env = make_env(FLAGS.env.id, FLAGS.env.source_config)
     dim_state = int(np.prod(env.observation_space.shape))
     if FLAGS.env.action_type == "continuous":
         dim_action = int(np.prod(env.action_space.shape))

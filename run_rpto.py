@@ -73,7 +73,7 @@ def main():
     FLAGS.set_seed()
     FLAGS.freeze()
 
-    env = make_env(FLAGS.env.id, FLAGS.env.env_config)
+    env = make_env(FLAGS.env.id, FLAGS.env.target_config)
     dim_state = int(np.prod(env.observation_space.shape))
     if FLAGS.env.action_type == "continuous":
         dim_action = int(np.prod(env.action_space.shape))
@@ -153,7 +153,7 @@ def main():
         (runners["train"], policy, "Virt_Env"),
     ]
 
-    if FLAGS.model.model_load_path is not None:
+    if os.path.exists(FLAGS.model.model_load_path):
         model_load_path = os.path.join(FLAGS.model.model_load_path, FLAGS.config.env)
         for file in os.listdir(model_load_path):
             if "2023" in file:

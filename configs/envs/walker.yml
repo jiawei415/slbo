@@ -3,3 +3,8 @@ env:
   id: Walker2D-v2
 runner:
   max_steps: 500
+env:
+  source_config: {version: 'v1'}
+  target_config: {version: 'v2'}
+model:
+  model_load_path: None
