@@ -13,6 +13,7 @@ from slbo.utils.normalizer import Normalizers
 from slbo.utils.tf_utils import get_tf_config
 from slbo.utils.runner import Runner
 from slbo.policies.gaussian_mlp_policy import GaussianMLPPolicy
+from slbo.policies.discrete_mlp_policy import DiscreteMLPPolicy
 from slbo.envs.virtual_env import VirtualEnv
 from slbo.dynamics_model import DynamicsModel
 from slbo.v_function.mlp_v_function import MLPVFunction
@@ -62,7 +63,11 @@ def make_real_runner(n_envs):
     from slbo.envs.batched_env import BatchedEnv
 
     batched_env = BatchedEnv([make_env(FLAGS.env.id) for _ in range(n_envs)])
-    return Runner(batched_env, rescale_action=True, **FLAGS.runner.as_dict())
+    return Runner(
+        batched_env,
+        rescale_action=bool(FLAGS.env.action_type == "continuous"),
+        **FLAGS.runner.as_dict(),
+    )
 
 
 def main():
@@ -71,7 +76,10 @@ def main():
 
     env = make_env(FLAGS.env.id)
     dim_state = int(np.prod(env.observation_space.shape))
-    dim_action = int(np.prod(env.action_space.shape))
+    if FLAGS.env.action_type == "continuous":
+        dim_action = int(np.prod(env.action_space.shape))
+    elif FLAGS.env.action_type == "discrete":
+        dim_action = env.action_space.n
 
     env.verify()
 
@@ -81,9 +89,20 @@ def main():
     train_set = Dataset(dtype, FLAGS.rollout.max_buf_size)
     dev_set = Dataset(dtype, FLAGS.rollout.max_buf_size)
 
-    policy = GaussianMLPPolicy(
-        dim_state, dim_action, normalizer=normalizers.state, **FLAGS.policy.as_dict()
-    )
+    if FLAGS.env.action_type == "continuous":
+        policy = GaussianMLPPolicy(
+            dim_state,
+            dim_action,
+            normalizer=normalizers.state,
+            **FLAGS.policy.as_dict(),
+        )
+    elif FLAGS.env.action_type == "discrete":
+        policy = DiscreteMLPPolicy(
+            dim_state,
+            dim_action,
+            normalizer=normalizers.state,
+            **FLAGS.policy.as_dict(),
+        )
     # batched noises
     noise = OUNoise(
         env.action_space,
@@ -118,6 +137,7 @@ def main():
         dim_state=dim_state,
         dim_action=dim_action,
         n_update=n_update,
+        action_type=FLAGS.env.action_type,
         **FLAGS.PPO.as_dict(),
     )
 
@@ -166,9 +186,14 @@ def main():
     now_model_update, now_policy_step = 0, 0
     for T in range(1, FLAGS.slbo.n_stages + 1):
         # collect data in real env
-        recent_train_set, ep_infos = runners["collect"].run(
-            noise.make(policy), FLAGS.rollout.n_train_samples
-        )
+        if FLAGS.env.action_type == "continuous":
+            recent_train_set, ep_infos = runners["collect"].run(
+                noise.make(policy), FLAGS.rollout.n_train_samples
+            )
+        elif FLAGS.env.action_type == "discrete":
+            recent_train_set, ep_infos = runners["collect"].run(
+                policy, FLAGS.rollout.n_train_samples
+            )
         add_multi_step(recent_train_set, train_set)
         returns = np.array([ep_info["return"] for ep_info in ep_infos])
         returns_mean, returns_std = 0, 0
@@ -197,16 +222,24 @@ def main():
             and T == 1
         ):
             normalizers.state.update(recent_train_set.state)
-            normalizers.action.update(recent_train_set.action)
+            if FLAGS.env.action_type == "continuous":
+                normalizers.action.update(recent_train_set.action)
             normalizers.diff.update(
                 recent_train_set.next_state - recent_train_set.state
             )
 
         # collect data for dev
-        add_multi_step(
-            runners["dev"].run(noise.make(policy), FLAGS.rollout.n_dev_samples)[0],
-            dev_set,
-        )
+
+        if FLAGS.env.action_type == "continuous":
+            add_multi_step(
+                runners["dev"].run(noise.make(policy), FLAGS.rollout.n_dev_samples)[0],
+                dev_set,
+            )
+        elif FLAGS.env.action_type == "discrete":
+            add_multi_step(
+                runners["dev"].run(policy, FLAGS.rollout.n_dev_samples)[0],
+                dev_set,
+            )
 
         if T == 50:
             max_ent_coef = 0.0
@@ -220,10 +253,18 @@ def main():
                 samples = train_set.sample_multi_step(
                     FLAGS.model.train_batch_size, 1, FLAGS.model.multi_step
                 )
+                action = samples.action
+                if FLAGS.env.action_type == "discrete":
+                    one_hot_action = np.zeros(samples.action.shape + (dim_action,))
+                    for i in range(action.shape[0]):
+                        one_hot_action[
+                            i, np.arange(action.shape[1]), action[0].astype(np.int64)
+                        ] = 1
+                    action = one_hot_action
                 _, train_loss, grad_norm = loss_mod.get_loss(
                     samples.state,
                     samples.next_state,
-                    samples.action,
+                    action,
                     ~samples.done & ~samples.timeout,
                     fetch="train loss grad_norm",
                 )
@@ -243,10 +284,18 @@ def main():
                 samples = dev_set.sample_multi_step(
                     FLAGS.model.train_batch_size, 1, FLAGS.model.multi_step
                 )
+                action = samples.action
+                if FLAGS.env.action_type == "discrete":
+                    one_hot_action = np.zeros(samples.action.shape + (dim_action,))
+                    for i in range(action.shape[0]):
+                        one_hot_action[
+                            i, np.arange(action.shape[1]), action[0].astype(np.int64)
+                        ] = 1
+                    action = one_hot_action
                 loss = loss_mod.get_loss(
                     samples.state,
                     samples.next_state,
-                    samples.action,
+                    action,
                     ~samples.done & ~samples.timeout,
                 )
                 loss = loss.mean()
