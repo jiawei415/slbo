@@ -92,7 +92,7 @@ class FLAGS(BaseFLAGS):
         dev_batch_size = 1024
         model_load_path = None
 
-    class RTPO(BaseFLAGS):
+    class RPTO(BaseFLAGS):
         # model
         step = 2
         model_lr = 1e-3

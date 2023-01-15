@@ -10,7 +10,7 @@ from slbo.policies import BaseNNPolicy
 from slbo.v_function import BaseVFunction
 
 
-class RTPO(nn.Module):
+class RPTO(nn.Module):
     def __init__(
         self,
         dim_state: int,

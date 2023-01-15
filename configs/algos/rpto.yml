@@ -1,5 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-algorithm: RTPO
+algorithm: RPTO
 slbo:
   n_stages: 100
   n_iters: 20

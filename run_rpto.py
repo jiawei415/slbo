@@ -18,7 +18,7 @@ from slbo.envs.virtual_env import VirtualEnv
 from slbo.dynamics_model import DynamicsModel
 from slbo.v_function.mlp_v_function import MLPVFunction
 from slbo.partial_envs import make_env
-from slbo.algos.RTPO import RTPO
+from slbo.algos.RPTO import RPTO
 
 logger = configure(FLAGS.log_dir)
 
@@ -126,7 +126,7 @@ def main():
     }
     criterion = criterion_map[FLAGS.model.loss]
     n_update = FLAGS.slbo.n_stages * FLAGS.slbo.n_iters * FLAGS.slbo.n_policy_iters
-    algo = RTPO(
+    algo = RPTO(
         vfn=vfn,
         policy=policy,
         model=model,
@@ -136,7 +136,7 @@ def main():
         dim_action=dim_action,
         n_update=n_update,
         action_type=FLAGS.env.action_type,
-        **FLAGS.RTPO.as_dict(),
+        **FLAGS.RPTO.as_dict(),
     )
 
     tf.get_default_session().run(tf.global_variables_initializer())
