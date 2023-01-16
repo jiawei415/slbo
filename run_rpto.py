@@ -153,18 +153,16 @@ def main():
         (runners["train"], policy, "Virt_Env"),
     ]
 
+    saver = nn.ModuleDict({"policy": policy, "model": model, "vfn": vfn})
+    logger.info(saver)
     if os.path.exists(FLAGS.model.model_load_path):
         model_load_path = os.path.join(FLAGS.model.model_load_path, FLAGS.config.env)
         for file in os.listdir(model_load_path):
             if "2023" in file:
                 model_load_path = os.path.join(model_load_path, f"{file}/final.npy")
                 break
-        model.load_state_dict(
-            np.load(model_load_path, allow_pickle=True).tolist()["model"]
-        )
+        saver.load_state_dict(np.load(model_load_path, allow_pickle=True)[()])
         logger.info("Load model from %s", model_load_path)
-    saver = nn.ModuleDict({"policy": policy, "model": model, "vfn": vfn})
-    logger.info(saver)
 
     # evaluation
     test_results = evaluate(settings)
