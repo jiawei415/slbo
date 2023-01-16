@@ -3,7 +3,9 @@ env:
   id: Walker2D-v2
   source_config: {version: 'v1'}
   target_config: {version: 'v2'}
+  # target_config: {version: 'v3'}
 runner:
   max_steps: 500
 model:
-  model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023010904
+  # model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023010904
+  model_load_path:  /apdcephfs/share_1150325/ztjiaweixu/slbo/2023010904

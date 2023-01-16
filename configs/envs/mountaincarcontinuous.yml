@@ -7,7 +7,10 @@ runner:
   max_steps: 500
 slbo:
   n_stages: 20
-  n_iters: 1
+  n_iters: 1 # 2 for mb_ppo
   n_policy_iters: 10
+plan:
+  n_trpo_samples: 2000
 model:
-  model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023011602
+  # model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023011602
+  model_load_path: /apdcephfs/share_1150325/ztjiaweixu/slbo/2023011602

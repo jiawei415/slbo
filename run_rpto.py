@@ -162,7 +162,7 @@ def main():
                 model_load_path = os.path.join(model_load_path, f"{file}/final.npy")
                 break
         saver.load_state_dict(np.load(model_load_path, allow_pickle=True)[()])
-        logger.info("Load model from %s", model_load_path)
+        logger.info(f"Load model from {model_load_path}")
 
     # evaluation
     test_results = evaluate(settings)

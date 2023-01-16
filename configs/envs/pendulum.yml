@@ -5,6 +5,9 @@ env:
   target_config: {g: 3.72}
 runner:
   max_steps: 200
+slbo:
+  n_stages: 50
+  n_iters: 1
 PPO:
   n_opt_epochs: 10
   batch_size: 64
@@ -14,4 +17,5 @@ PPO:
   lr_min: 0.0001
   lr_decay: True
 model:
-  model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023011602
+  # model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023011602
+  model_load_path: /apdcephfs/share_1150325/ztjiaweixu/slbo/2023011602
