@@ -6,4 +6,4 @@ env:
 runner:
   max_steps: 500
 model:
-  model_load_path: None
+  model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023010904

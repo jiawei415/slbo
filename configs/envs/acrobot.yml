@@ -11,4 +11,4 @@ slbo:
   n_iters: 1
   n_policy_iters: 10
 model:
-  model_load_path: None
+  model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023011602
