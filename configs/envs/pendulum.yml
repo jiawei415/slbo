@@ -6,8 +6,7 @@ env:
 runner:
   max_steps: 200
 slbo:
-  n_stages: 50
-  n_iters: 1
+  n_stages: 10
 PPO:
   n_opt_epochs: 10
   batch_size: 64
