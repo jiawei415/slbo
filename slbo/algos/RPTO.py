@@ -396,7 +396,7 @@ class RPTO(nn.Module):
             param.invalidate()
         for param in self.old_policy.parameters():
             param.invalidate()
-        for param in self.model.parameters():
+        for param in self.vf.parameters():
             param.invalidate()
 
         assert np.isclose(lr, now_lr)
