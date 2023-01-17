@@ -32,6 +32,7 @@ class RPTO(nn.Module):
         vf_coef=0.25,
         ent_coef=0.0,
         rpo_coef=1.0,
+        tar_coef=1.0,
         lr=1e-3,
         lr_min=3e-4,
         lr_decay=True,
@@ -60,6 +61,7 @@ class RPTO(nn.Module):
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
         self.rpo_coef = rpo_coef
+        self.tar_coef = tar_coef
         self.clip_range = clip_range
         self.max_grad_norm = max_grad_norm
         self.batch_size = batch_size
@@ -190,10 +192,10 @@ class RPTO(nn.Module):
         entropy = tf.reduce_mean(entropy)
 
         rpo_loss = (
-            pg_sim_loss
+            pg_sim_loss * self.rpo_coef
             - entropy * self.ent_coef
             + vf_loss * self.vf_coef
-            + pg_tar_loss * self.rpo_coef
+            + pg_tar_loss * self.tar_coef
         )
 
         return rpo_loss, pg_sim_loss, pg_tar_loss, vf_loss, entropy

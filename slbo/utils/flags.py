@@ -104,6 +104,7 @@ class FLAGS(BaseFLAGS):
         sp_coef = 1.0
         # policy
         rpo_coef = 1.0
+        tar_coef = 1.0
         n_opt_epochs = 10
         batch_size = 64
         vf_coef = 0.5
