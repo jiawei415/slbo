@@ -114,6 +114,8 @@ class FLAGS(BaseFLAGS):
         lr_decay = False
         clip_range = 0.2
         max_grad_norm = 0.5
+        norm_sim_adv = True
+        norm_tar_adv = True
 
     class policy(BaseFLAGS):
         hidden_sizes = [32, 32]

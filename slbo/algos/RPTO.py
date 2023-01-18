@@ -40,6 +40,8 @@ class RPTO(nn.Module):
         max_grad_norm=0.5,
         batch_size=64,
         n_opt_epochs=10,
+        norm_sim_adv=True,
+        norm_tar_adv=True,
         **kwargs,
     ):
         super().__init__()
@@ -66,6 +68,8 @@ class RPTO(nn.Module):
         self.max_grad_norm = max_grad_norm
         self.batch_size = batch_size
         self.n_opt_epochs = n_opt_epochs
+        self.norm_sim_adv = norm_sim_adv
+        self.norm_tar_adv = norm_tar_adv
         self.n_update = n_update
         self.action_type = action_type
 
@@ -314,13 +318,15 @@ class RPTO(nn.Module):
         update,
     ):
         sim_returns = sim_advantages + sim_values
-        sim_advantages = (sim_advantages - sim_advantages.mean()) / np.maximum(
-            sim_advantages.std(), 1e-8
-        )
+        if self.norm_sim_adv:
+            sim_advantages = (sim_advantages - sim_advantages.mean()) / np.maximum(
+                sim_advantages.std(), 1e-8
+            )
         tar_returns = tar_advantages + tar_values
-        tar_advantages = (tar_advantages - tar_advantages.mean()) / np.maximum(
-            tar_advantages.std(), 1e-8
-        )
+        if self.norm_tar_adv:
+            tar_advantages = (tar_advantages - tar_advantages.mean()) / np.maximum(
+                tar_advantages.std(), 1e-8
+            )
         assert np.isfinite(sim_advantages).all() and np.isfinite(tar_advantages).all()
 
         self.sync_old()
