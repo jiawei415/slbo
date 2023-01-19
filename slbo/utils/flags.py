@@ -101,6 +101,7 @@ class FLAGS(BaseFLAGS):
         model_lr = 1e-3
         model_weight_decay = 1e-5
         model_max_grad_norm = 2.0
+        rto_coef = 1.0
         sp_coef = 1.0
         # policy
         rpo_coef = 1.0

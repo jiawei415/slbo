@@ -27,6 +27,7 @@ class RPTO(nn.Module):
         weight_decay=1e-5,
         model_max_grad_norm=2.0,
         model_lr=1e-3,
+        rto_coef=1.0,
         sp_coef=1.0,
         # policy
         vf_coef=0.25,
@@ -56,6 +57,7 @@ class RPTO(nn.Module):
         self.weight_decay = weight_decay
         self.model_max_grad_norm = model_max_grad_norm
         self.model_lr = model_lr
+        self.rto_coef = rto_coef
         self.sp_coef = sp_coef
         self.lr = lr
         self.lr_min = lr_min
@@ -253,7 +255,9 @@ class RPTO(nn.Module):
             [tf.nn.l2_loss(t) for t in params], name="regularization"
         )
 
-        loss = self.op_rto_loss + self.sp_coef * (self.op_dy_loss + regularization)
+        loss = self.rto_coef * self.op_rto_loss + self.sp_coef * (
+            self.op_dy_loss + regularization
+        )
         grads_and_vars = optimizer.compute_gradients(loss, var_list=params)
         clip_grads, self.op_model_grad_norm = tf.clip_by_global_norm(
             [grad for grad, _ in grads_and_vars], self.model_max_grad_norm
