@@ -8,4 +8,4 @@ runner:
   max_steps: 500
 model:
   # model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023010904
-  model_load_path:  /apdcephfs/share_1150325/ztjiaweixu/slbo/2023010904
+  model_load_path: /apdcephfs/share_1150325/ztjiaweixu/slbo/2023010904

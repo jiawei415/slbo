@@ -6,7 +6,8 @@ env:
   target_config: {mass_1: 0.1, mass_2: 0.1}
 runner:
   max_steps: 500
-slbo:
+  rescale_action: False
+common:
   n_stages: 10
   n_iters: 1
   n_policy_iters: 10

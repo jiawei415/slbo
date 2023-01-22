@@ -6,7 +6,8 @@ env:
   target_config: {length: 0.6}
 runner:
   max_steps: 200
-slbo:
+  rescale_action: False
+common:
   n_stages: 20
   n_iters: 1
   n_policy_iters: 1

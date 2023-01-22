@@ -5,8 +5,10 @@ env:
   target_config: {g: 3.72}
 runner:
   max_steps: 200
-slbo:
-  n_stages: 10
+  rescale_action: False
+common:
+  n_stages: 50
+  n_iters: 1 # 2 for rpto
 PPO:
   n_opt_epochs: 10
   batch_size: 64

@@ -5,12 +5,13 @@ env:
   target_config: {g: 0.0060}
 runner:
   max_steps: 500
-slbo:
-  n_stages: 20
+  rescale_action: False
+common:
+  n_stages: 50
   n_iters: 1 # 2 for mb_ppo
   n_policy_iters: 10
 plan:
-  n_trpo_samples: 2000
+  n_policy_samples: 2000
 model:
   # model_load_path: /data/ztjiaweixu/Code/Plot/results/slbo/2023011602
   model_load_path: /apdcephfs/share_1150325/ztjiaweixu/slbo/2023011602
