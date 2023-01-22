@@ -131,6 +131,13 @@ class FLAGS(BaseFLAGS):
         hidden_sizes = [32, 32]
         init_std = 1.0
 
+    class MultiStep(BaseFLAGS):
+        # model
+        step = 2
+        lr = 1e-3
+        weight_decay = 1e-5
+        max_grad_norm = 2.0
+
     class RTO(BaseFLAGS):
         # model
         step = 2
