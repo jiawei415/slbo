@@ -67,7 +67,6 @@ def main():
     model = DynamicsModel(dim_state, dim_action, normalizers, FLAGS.model.hidden_sizes)
 
     criterion = get_criterion(FLAGS.model.loss)
-
     rto = RTO(
         dim_state=dim_state,
         dim_action=dim_action,

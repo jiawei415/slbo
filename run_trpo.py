@@ -3,11 +3,16 @@ import tensorflow as tf
 import numpy as np
 import lunzi.nn as nn
 from slbo.utils.logger import configure
+from slbo.utils.tf_utils import get_tf_config
 from slbo.utils.flags import FLAGS
 from slbo.utils.normalizer import Normalizers
-from slbo.utils.tf_utils import get_tf_config
-from slbo.utils.runner import Runner
+from slbo.utils.functions import (
+    format_data,
+    evaluate,
+    make_real_runner,
+)
 from slbo.policies.gaussian_mlp_policy import GaussianMLPPolicy
+from slbo.policies.discrete_mlp_policy import DiscreteMLPPolicy
 from slbo.v_function.mlp_v_function import MLPVFunction
 from slbo.partial_envs import make_env
 from slbo.algos.TRPO import TRPO
@@ -15,53 +20,30 @@ from slbo.algos.TRPO import TRPO
 logger = configure(FLAGS.log_dir)
 
 
-def format_data(data: dict, format=3):
-    new_data: dict = {}
-    for key, val in data.items():
-        new_data[key] = round(val, format)
-    return new_data
-
-
-def evaluate(settings):
-    results = {}
-    for runner, policy, name in settings:
-        runner.reset()
-        _, ep_infos = runner.run(policy, FLAGS.rollout.n_test_samples)
-        returns = np.array([ep_info["return"] for ep_info in ep_infos])
-        returns_mean, returns_std = 0, 0
-        if len(returns) > 0:
-            returns_mean, returns_std = np.mean(returns), np.std(returns) / len(returns)
-        results.update(
-            {
-                f"{name}/reward": returns_mean,
-                f"{name}/reward_std": returns_std,
-                f"{name}/reward_len": len(returns),
-            }
-        )
-    return results
-
-
-def make_real_runner(n_envs):
-    from slbo.envs.batched_env import BatchedEnv
-
-    batched_env = BatchedEnv([make_env(FLAGS.env.id) for _ in range(n_envs)])
-    return Runner(batched_env, rescale_action=True, **FLAGS.runner.as_dict())
-
-
 def main():
     FLAGS.set_seed()
     FLAGS.freeze()
 
     env = make_env(FLAGS.env.id)
-    dim_state = int(np.prod(env.observation_space.shape))
-    dim_action = int(np.prod(env.action_space.shape))
-
     env.verify()
+
+    dim_state = int(np.prod(env.observation_space.shape))
+    if FLAGS.env.action_type == "continuous":
+        dim_action = int(np.prod(env.action_space.shape))
+    elif FLAGS.env.action_type == "discrete":
+        dim_action = env.action_space.n
 
     normalizers = Normalizers(dim_action=dim_action, dim_state=dim_state)
 
-    policy = GaussianMLPPolicy(
-        dim_state, dim_action, normalizer=normalizers.state, **FLAGS.policy.as_dict()
+    if FLAGS.env.action_type == "continuous":
+        Policy = GaussianMLPPolicy
+    elif FLAGS.env.action_type == "discrete":
+        Policy = DiscreteMLPPolicy
+    policy = Policy(
+        dim_state,
+        dim_action,
+        normalizer=normalizers.state,
+        **FLAGS.policy.as_dict(),
     )
     vfn = MLPVFunction(dim_state, [64, 64], normalizers.state)
     algo = TRPO(
@@ -74,17 +56,17 @@ def main():
 
     tf.get_default_session().run(tf.global_variables_initializer())
 
-    runners = {
-        "test": make_real_runner(4),
-        "train": make_real_runner(1),
-    }
-    settings = [(runners["test"], policy, "Real_Env")]
-
     saver = nn.ModuleDict({"policy": policy, "vfn": vfn})
     logger.info(saver)
 
+    runners = {
+        "test": make_real_runner(4, FLAGS.env.id, FLAGS.runner.as_dict()),
+        "train": make_real_runner(1, FLAGS.env.id, FLAGS.runner.as_dict()),
+    }
+    settings = [(runners["test"], policy, "Real_Env")]
+
     # evaluation
-    test_results = evaluate(settings)
+    test_results = evaluate(settings, FLAGS.rollout.n_test_samples)
     logger.record("global/stage", 0)
     logger.record("global/env_step", 0)
     logger.record("global/update_step", 0)
@@ -96,12 +78,12 @@ def main():
 
     runners["train"].reset()
     now_update, now_step = 0, 0
-    for T in range(1, FLAGS.slbo.n_stages + 1):
+    for T in range(1, FLAGS.common.n_stages + 1):
         if T == 50:
             max_ent_coef = 0.0
 
-        for i in range(FLAGS.slbo.n_iters):
-            for policy_iter in range(FLAGS.slbo.n_policy_iters):
+        for i in range(FLAGS.common.n_iters):
+            for policy_iter in range(FLAGS.common.n_policy_iters):
                 data, ep_infos = runners["train"].run(
                     policy, FLAGS.rollout.n_train_samples
                 )
@@ -127,7 +109,7 @@ def main():
                     f"[TRPO]: {str(policy_iter + 1).zfill(2)} {format_data(train_results)} {format_data(update_results)}"
                 )
 
-        test_results = evaluate(settings)
+        test_results = evaluate(settings, FLAGS.rollout.n_test_samples)
 
         logger.record("global/stage", T)
         logger.record("global/env_step", now_step)

@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 algorithm: TRPO
-slbo:
+common:
   n_stages: 15
   n_iters: 1
   n_policy_iters: 20
