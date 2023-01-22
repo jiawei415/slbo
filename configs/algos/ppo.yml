@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 algorithm: PPO
-slbo:
+common:
   n_stages: 50
   n_iters: 1
   n_policy_iters: 20
