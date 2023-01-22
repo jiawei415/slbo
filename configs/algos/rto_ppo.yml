@@ -1,0 +1,32 @@
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+algorithm: RTO_PPO
+common:
+  n_stages: 100
+  n_iters: 20
+  n_model_iters: 100
+  n_policy_iters: 40
+model:
+  multi_step: 2
+  dev_batch_size: 512
+  train_batch_size: 128
+policy:
+  hidden_sizes: [64, 64]
+plan:
+  n_policy_samples: 4000
+RTO:
+  step: 2
+  lr: 1e-3
+  weight_decay: 1e-5
+  max_grad_norm: 2.0
+  rto_coef: 1.0
+  sp_coef: 1.0
+PPO:
+  n_opt_epochs: 10
+  batch_size: 64
+  vf_coef: 0.5
+  ent_coef: 0.0
+  lr: 0.0003
+  lr_min: 0.000000001
+  lr_decay: True
+  clip_range: 0.2
+  max_grad_norm: 0.5

@@ -19,11 +19,11 @@ from slbo.utils.functions import (
 )
 from slbo.policies.gaussian_mlp_policy import GaussianMLPPolicy
 from slbo.policies.discrete_mlp_policy import DiscreteMLPPolicy
-from slbo.v_function.mlp_v_function import MLPVFunction
 from slbo.dynamics_model import DynamicsModel
+from slbo.v_function.mlp_v_function import MLPVFunction
 from slbo.envs.virtual_env import VirtualEnv
 from slbo.partial_envs import make_env
-from slbo.algos.RPO import RPO
+from slbo.algos.PPO import PPO
 from slbo.algos.RTO import RTO
 
 logger = configure(FLAGS.log_dir)
@@ -77,17 +77,18 @@ def main():
         action_type=FLAGS.env.action_type,
         **FLAGS.RTO.as_dict(),
     )
+
     n_update = (
         FLAGS.common.n_stages * FLAGS.common.n_iters * FLAGS.common.n_policy_iters
     )
-    rpo = RPO(
+    ppo = PPO(
+        vfn=vfn,
+        policy=policy,
         dim_state=dim_state,
         dim_action=dim_action,
-        policy=policy,
-        vfn=vfn,
         n_update=n_update,
         action_type=FLAGS.env.action_type,
-        **FLAGS.RPO.as_dict(),
+        **FLAGS.PPO.as_dict(),
     )
 
     tf.get_default_session().run(tf.global_variables_initializer())
@@ -112,16 +113,15 @@ def main():
     virt_runner = Runner(
         virt_env, **{**FLAGS.runner.as_dict(), "max_steps": FLAGS.plan.max_steps}
     )
-
     runners = {
         "test": make_real_runner(4, FLAGS.env.id, FLAGS.runner.as_dict()),
         "dev": make_real_runner(1, FLAGS.env.id, FLAGS.runner.as_dict()),
         "collect": make_real_runner(1, FLAGS.env.id, FLAGS.runner.as_dict()),
-        "source": virt_runner,
+        "train": virt_runner,
     }
     settings = [
         (runners["test"], policy, "Real_Env"),
-        (runners["source"], policy, "Virt_Env"),
+        (runners["train"], policy, "Virt_Env"),
     ]
 
     # evaluation
@@ -163,6 +163,7 @@ def main():
                 assert np.allclose(
                     samples.state[i + 1] * masks, samples.next_state[i] * masks
                 )
+
         if (
             FLAGS.rollout.normalizer == "policy"
             or FLAGS.rollout.normalizer == "uniform"
@@ -227,14 +228,13 @@ def main():
             # update policy
             for policy_iter in range(FLAGS.common.n_policy_iters):
                 if FLAGS.algorithm != "MF" and FLAGS.common.start == "buffer":
-                    runners["source"].set_state(
+                    runners["train"].set_state(
                         train_set.sample(FLAGS.plan.n_envs).state
                     )
                 else:
-                    runners["source"].reset()
+                    runners["train"].reset()
 
-                # collect source(model) env data
-                data, ep_infos = runners["source"].run(
+                data, ep_infos = runners["train"].run(
                     policy, FLAGS.plan.n_policy_samples
                 )
                 returns = [info["return"] for info in ep_infos]
@@ -250,29 +250,11 @@ def main():
                 }
                 now_virt_step += FLAGS.plan.n_policy_samples
 
-                # collect target(real) env data
-                tar_data, ep_infos = runners["collect"].run(
-                    policy, FLAGS.plan.n_policy_samples
-                )
-                add_multi_step(tar_data, train_set)
-                now_real_step += FLAGS.plan.n_policy_samples
-
-                advantages, values = runners["source"].compute_advantage(vfn, data)
-                tar_advantages, tar_values = runners["collect"].compute_advantage(
-                    vfn, tar_data
-                )
-                rpo_results = rpo.train(
-                    data,
-                    advantages,
-                    values,
-                    tar_data,
-                    tar_advantages,
-                    tar_values,
-                    now_policy_step,
-                )
+                advantages, values = runners["train"].compute_advantage(vfn, data)
+                ppo_results = ppo.train(data, advantages, values, now_policy_step)
                 now_policy_step += 1
                 logger.info(
-                    f"[RPO]: {str(policy_iter + 1).zfill(2)} {format_data(rpo_results)}"
+                    f"[PPO]: {str(policy_iter + 1).zfill(2)} {format_data(ppo_results)}"
                 )
 
         test_results = evaluate(settings, FLAGS.rollout.n_test_samples)
@@ -286,7 +268,7 @@ def main():
             logger.record(f"train/{key}", val)
         for key, val in train_virt_results.items():
             logger.record(f"train/{key}", val)
-        for key, val in rpo_results.items():
+        for key, val in ppo_results.items():
             logger.record(f"update/{key}", val)
         for key, val in rto_results.items():
             logger.record(f"update/{key}", val)
