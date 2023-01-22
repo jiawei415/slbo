@@ -25,6 +25,15 @@ class FLAGS(BaseFLAGS):
     algorithm = "OLBO"  # possible options: OLBO, baseline, MF
     raw_cmdline = get_raw_cmdline()
 
+    class common(BaseFLAGS):
+        n_iters = 20
+        n_policy_iters = 10
+        n_model_iters = 100
+        n_stages = 100
+        n_evaluate_iters = 10
+        opt_model = False
+        start = "reset"  # possibly 'buffer'
+
     class slbo(BaseFLAGS):
         n_iters = 20
         n_policy_iters = 10
@@ -37,13 +46,13 @@ class FLAGS(BaseFLAGS):
     class plan(BaseFLAGS):
         max_steps = 500
         n_envs = None
-        n_trpo_samples = 4000
+        n_policy_samples = 4000
 
         @classmethod
         def finalize(cls):
             if cls.n_envs is None:
-                cls.n_envs = cls.n_trpo_samples // cls.max_steps
-            assert cls.n_envs * cls.max_steps == cls.n_trpo_samples
+                cls.n_envs = cls.n_policy_samples // cls.max_steps
+            assert cls.n_envs * cls.max_steps == cls.n_policy_samples
 
     class env(BaseFLAGS):
         id = "HalfCheetah-v2"
@@ -122,6 +131,30 @@ class FLAGS(BaseFLAGS):
         hidden_sizes = [32, 32]
         init_std = 1.0
 
+    class RTO(BaseFLAGS):
+        # model
+        step = 2
+        lr = 1e-3
+        weight_decay = 1e-5
+        max_grad_norm = 2.0
+        rto_coef = 1.0
+        sp_coef = 1.0
+
+    class RPO(BaseFLAGS):
+        vf_coef = 0.5
+        ent_coef = 0.0
+        sim_coef = 1.0
+        tar_coef = 1.0
+        lr = 3e-4
+        lr_min = 3e-4
+        lr_decay = False
+        clip_range = 0.2
+        max_grad_norm = 0.5
+        n_opt_epochs = 10
+        batch_size = 64
+        norm_sim_adv = True
+        norm_tar_adv = True
+
     class PPO(BaseFLAGS):
         n_opt_epochs = 10
         batch_size = 64
@@ -145,6 +178,7 @@ class FLAGS(BaseFLAGS):
         lambda_ = 0.95
         gamma = 0.99
         max_steps = 500
+        rescale_action = True
 
     class config(BaseFLAGS):
         seed = 2023

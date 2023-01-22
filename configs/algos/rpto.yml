@@ -1,30 +1,27 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 algorithm: RPTO
-slbo:
+common:
   n_stages: 100
-  n_iters: 20
-  n_model_iters: 100
-  n_policy_iters: 40
-plan:
-  n_trpo_samples: 1000
+  n_iters: 1
+  n_model_iters: 40
+  n_policy_iters: 5
 model:
   multi_step: 2
   dev_batch_size: 512
   train_batch_size: 128
-slbo:
-  n_stages: 100
-  n_iters: 20
-  n_model_iters: 100
-  n_policy_iters: 40
 policy:
   hidden_sizes: [64, 64]
-PPO:
-  n_opt_epochs: 5
-  batch_size: 64
+plan:
+  n_policy_samples: 1000
+rollout:
+  n_train_samples: 2000
+RPO:
   vf_coef: 0.5
-  ent_coef: 0.01
-  lr: 0.001
-  lr_min: 0.0003
+  ent_coef: 0.0
+  lr: 0.0001
+  lr_min: 0.000000001
   lr_decay: True
   clip_range: 0.2
   max_grad_norm: 0.5
+  n_opt_epochs: 10
+  batch_size: 64
