@@ -75,17 +75,14 @@ class MultiStep(nn.Module):
         pass
 
     def build_backward(self):
-        loss = self.op_loss.reduce_mean(name="Loss")
-
         optimizer = tf.train.AdamOptimizer(self.lr)
         params = self._model.parameters()
         regularization = self.weight_decay * tf.add_n(
             [tf.nn.l2_loss(t) for t in params], name="regularization"
         )
 
-        grads_and_vars = optimizer.compute_gradients(
-            loss + regularization, var_list=params
-        )
+        loss = self.op_loss + regularization
+        grads_and_vars = optimizer.compute_gradients(loss, var_list=params)
         print([var.name for grad, var in grads_and_vars])
         clip_grads, self.op_grad_norm = tf.clip_by_global_norm(
             [grad for grad, _ in grads_and_vars], self.max_grad_norm

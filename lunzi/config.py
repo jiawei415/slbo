@@ -77,7 +77,7 @@ def parse(cls):
     if _initialized:
         return
     parser = argparse.ArgumentParser(description="Stochastic Lower Bound Optimization")
-    parser.add_argument("-a", "--alg", type=str, default="ppo")
+    parser.add_argument("-a", "--alg", type=str, default="rpto")
     parser.add_argument("-e", "--env", type=str, default="half_cheetah")
     parser.add_argument("-s", "--seed", type=int, default=2023)
     parser.add_argument("-l", "--logdir", type=str, default="~/results/slbo")
