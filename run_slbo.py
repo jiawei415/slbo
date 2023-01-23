@@ -98,7 +98,12 @@ def main():
         model, make_env(FLAGS.env.id), FLAGS.plan.n_envs, opt_model=FLAGS.slbo.opt_model
     )
     virt_runner = Runner(
-        virt_env, **{**FLAGS.runner.as_dict(), "max_steps": FLAGS.plan.max_steps}
+        virt_env,
+        **{
+            **FLAGS.runner.as_dict(),
+            "max_steps": FLAGS.plan.max_steps,
+            "rescale_action": False,
+        },
     )
 
     criterion_map = {

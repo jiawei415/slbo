@@ -95,7 +95,12 @@ def main():
         opt_model=FLAGS.common.opt_model,
     )
     virt_runner = Runner(
-        virt_env, **{**FLAGS.runner.as_dict(), "max_steps": FLAGS.plan.max_steps}
+        virt_env,
+        **{
+            **FLAGS.runner.as_dict(),
+            "max_steps": FLAGS.plan.max_steps,
+            "rescale_action": False,
+        },
     )
 
     runners = {
